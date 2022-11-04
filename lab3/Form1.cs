@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using System.Threading;
@@ -12,10 +13,14 @@ using System.Windows.Forms;
 using MySqlConnector;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
+
 namespace lab3
 {
+
     public partial class Form1 : Form
     {
+        [DllImport("User32.dll", CharSet = CharSet.Auto, EntryPoint = "SendMessage")]
+        static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         public static int combinations = 0;
 
@@ -44,9 +49,12 @@ namespace lab3
         {
             InitializeComponent();
         }
-
-        private async void button1_Click(object sender, EventArgs e)
+        
+        const int WM_VSCROLL = 277;
+        const int SB_BOTTOM = 7;
+        private void button1_Click(object sender, EventArgs e)
         {
+
             if (string.IsNullOrEmpty(textBox1.Text)==true || string.IsNullOrEmpty(textBox2.Text) == true || string.IsNullOrEmpty(textBox3.Text) == true)
             {
                 MessageBox.Show("Введите, пожалуйста, все данные","WARNING",MessageBoxButtons.OK,MessageBoxIcon.Warning);
@@ -88,16 +96,19 @@ namespace lab3
                             }
                             combination = combination + alphabet[letter[j]];
                         }
-                        textBox5.Text += "Пробуем пароль: " + combination + "\n";
-                        if (!f) break;
+
+                    richTextBox1.AppendText("Пробуем пароль: " + combination+Environment.NewLine);
+                    ScrollToEnd(richTextBox1);
+
+                    if (!f) break;
                         letter[0]++;
                     try
                         {
                             path = "server=" + textBox1.Text + ";user=" + textBox3.Text + ";database=" + textBox2.Text + ";password=" + combination + ";port=3306;";
                             MySqlConnection conn = new MySqlConnection(path);
                             conn.Open();
-                            textBox5.Text += "Пароль подошел";
-                            MessageBox.Show("Пароль подошел: " + combination);
+                             richTextBox1.Text += "Пароль подошел: "+combination;
+                            ScrollToEnd(richTextBox1);
                             break;
                         }
                         catch (Exception)
@@ -106,22 +117,13 @@ namespace lab3
                         //Console.WriteLine(combination);
                         combination = "";
                     }
-               
-
-
-
-               /* for (int i = passlen[0]; i <= passlen[1]; i++)
-                {
-                    int size = i;
-                    for (int j = 0; j < size - 1; j++)
-                    {
-                        
-                    }
-                }*/
             }
-
-
-
+        }
+        private void ScrollToEnd(RichTextBox rtb)
+        {
+            IntPtr ptrWparam = new IntPtr(SB_BOTTOM);
+            IntPtr ptrLparam = new IntPtr(0);
+            SendMessage(rtb.Handle, WM_VSCROLL, ptrWparam, ptrLparam);
         }
     }
 }
